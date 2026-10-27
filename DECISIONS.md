@@ -37,3 +37,11 @@ The shadcn registry (ui.shadcn.com) was unreachable from the build environment, 
 
 ## D-010 — "Product value sent" shown separately from fees (2026-10-27)
 Open question in SPEC §9. Until Matt decides, campaign pages show fees and product value as separate numbers; ROI math (Phase 5) will take a setting rather than hard-coding either answer.
+
+## D-011 — Collect post stats without asking creators to connect (2026-10-27)
+Matt's direction: the core value is tracking stats on creator posts automatically; asking creators to connect accounts can't be the main path. Plan for Phases 2–3:
+- **Instagram:** Business Discovery (brand's own token) is the primary source. Per current Meta docs it returns public `like_count`, `comments_count`, follower count, and now `view_count` for Reels, for any Business/Creator account. Source label `public_api`. No creator action needed.
+- **YouTube:** Data API with an API key (public views/likes/comments).
+- **TikTok:** the official APIs need creator login, so the default is a third-party scraping service (e.g. Apify), with source label `third_party_scrape` (new; added to the allowed sources). It's also the fallback for Instagram personal accounts that Business Discovery can't see. Scrapers break, so they get their own health status and alerts like any other integration. Needs Matt's OK because it's a new paid service.
+- **Not obtainable from any public source, including scrapers:** reach, impressions, saves, shares, Story views. These stay "Not available — private to the creator" unless the creator connects or uploads a screenshot. Creator connection becomes an optional bonus, not a requirement.
+- EMV is calculated only from the metrics we actually have, and the report says which ones were included.
