@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Marcosm Influencer Tracker
 
-## Getting Started
+Internal tool for tracking creator deals, posts, performance and Shopify revenue across Marcosm brands.
+Scope and build order: [`SPEC.md`](SPEC.md). Status: [`PROGRESS.md`](PROGRESS.md). Decisions: [`DECISIONS.md`](DECISIONS.md).
 
-First, run the development server:
+## Local development
+
+Requirements: Node 22+, Docker (for the local Supabase stack).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npx supabase start          # Postgres, Auth, REST, Mailpit on 127.0.0.1:543xx; applies migrations + seed
+cp .env.example .env.local  # then paste the URL / publishable key / secret key printed by `supabase start`
+npm run dev                 # http://127.0.0.1:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Sign in at http://127.0.0.1:3000/login with an invited email (`mattryce@marcosm.co`, or the seeded `cece@example.com` / `content@example.com`). The magic link lands in Mailpit at http://127.0.0.1:54324.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Use `127.0.0.1`, not `localhost`, so auth cookies and redirect URLs match `supabase/config.toml`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tests
 
-## Learn More
+```bash
+npm test             # unit tests
+npm run test:db      # migrations + RLS against a throwaway local Postgres (needs initdb/pg_ctl)
+npm run build && npm start   # then, with `supabase start` running:
+node tests/e2e/smoke.mjs http://127.0.0.1:3000 [screenshot-dir]   # browser smoke test (needs Playwright)
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Layout
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `app/(app)/` — signed-in pages (overview, creators, campaigns, settings)
+- `app/login`, `app/auth/*` — magic-link sign-in
+- `lib/` — domain logic (handle normalization, CSV import planning, deliverables, validation), Supabase clients, integration adapters
+- `supabase/migrations/` — schema + RLS; `supabase/seed.sql` — fake local data
+- `tests/` — DB tests, fixtures, e2e smoke test
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploying
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Create the Supabase project, then `npx supabase link --project-ref <ref>` and `npx supabase db push`. (Don't load `seed.sql` in production.)
+2. In Supabase → Auth → URL Configuration, set the Site URL and add `https://<app-domain>/auth/callback` to Redirect URLs. Configure custom SMTP so invite/sign-in emails aren't rate-limited.
+3. Set the env vars from `.env.example` on the host.
